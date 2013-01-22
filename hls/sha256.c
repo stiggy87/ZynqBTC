@@ -38,7 +38,7 @@ uint k[64] = {
 void sha256_transform(SHA256_CTX *ctx, uchar data[64])
 {  
    uint a,b,c,d,e,f,g,h,i,j,t1,t2,m[64];
-      
+
    for (i=0,j=0; i < 16; ++i, j += 4)
       m[i] = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | (data[j+3]);
    for ( ; i < 64; ++i)
@@ -94,7 +94,7 @@ void sha256_init(SHA256_CTX *ctx)
 void sha256_update(SHA256_CTX *ctx, uchar data[64], uint len)
 {  
    uint t,i;
-   
+#pragma HLS unroll
    for (i=0; i < len; ++i) { 
       ctx->data[ctx->datalen] = data[i]; 
       ctx->datalen++; 
@@ -124,10 +124,11 @@ void sha256_final(SHA256_CTX *ctx, uchar hash[])
          ctx->data[i++] = 0x00; 
       sha256_transform(ctx,ctx->data);
       //memset(ctx->data,0,56);
-      for(i = 0; i < 56; i = i + 1) {
-    	  ctx->data[i] = 0;
-      }
-   }  
+
+	for(i = 0; i < 56; i = i + 1) {
+			  ctx->data[i] = 0;
+		  }
+	}
    
    // Append to the padding the total message's length in bits and transform. 
    DBL_INT_ADD(ctx->bitlen[0],ctx->bitlen[1],ctx->datalen * 8);
@@ -143,6 +144,7 @@ void sha256_final(SHA256_CTX *ctx, uchar hash[])
    
    // Since this implementation uses little endian byte ordering and SHA uses big endian,
    // reverse all the bytes when copying the final state to the output hash. 
+#pragma HLS unroll
    for (i=0; i < 4; ++i) { 
       hash[i]    = (ctx->state[0] >> (24-i*8)) & 0x000000ff; 
       hash[i+4]  = (ctx->state[1] >> (24-i*8)) & 0x000000ff; 
@@ -158,7 +160,7 @@ void sha256_final(SHA256_CTX *ctx, uchar hash[])
 
 // SHA256_top
 void sha256_top(SHA256_CTX *ctx, uchar data[64], uint len, uchar hash[64]) {
-
+	int i;
 	// Initialize the hash
 	sha256_init(ctx);
 
