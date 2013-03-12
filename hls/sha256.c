@@ -1,4 +1,5 @@
 #include <stdio.h> 
+#include <stdbool.h>
 
 // Signed variables are for wimps 
 #define uchar unsigned char // 8-bit byte
@@ -17,13 +18,17 @@
 #define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
 
 typedef struct {
-   uchar data[64];
+   uchar in_data[64];
    uint datalen;
    uint bitlen[2];
    uint state[8];
 } SHA256_CTX;
 
-uint k[64] = {
+uint data[64];
+uint hash[64];
+SHA256_CTX *ctx;
+
+const uint k[64] = {
    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -34,24 +39,23 @@ uint k[64] = {
    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
 };
 
-
-void sha256_transform(SHA256_CTX *ctx, uchar data[64])
+void sha256_transform(SHA256_CTX *ctx_transform, uchar data_transform[64])
 {  
    uint a,b,c,d,e,f,g,h,i,j,t1,t2,m[64];
 
    for (i=0,j=0; i < 16; ++i, j += 4)
-      m[i] = (data[j] << 24) | (data[j+1] << 16) | (data[j+2] << 8) | (data[j+3]);
+      m[i] = (data_transform[j] << 24) | (data_transform[j+1] << 16) | (data_transform[j+2] << 8) | (data_transform[j+3]);
    for ( ; i < 64; ++i)
       m[i] = SIG1(m[i-2]) + m[i-7] + SIG0(m[i-15]) + m[i-16];
 
-   a = ctx->state[0];
-   b = ctx->state[1];
-   c = ctx->state[2];
-   d = ctx->state[3];
-   e = ctx->state[4];
-   f = ctx->state[5];
-   g = ctx->state[6];
-   h = ctx->state[7];
+   a = ctx_transform->state[0];
+   b = ctx_transform->state[1];
+   c = ctx_transform->state[2];
+   d = ctx_transform->state[3];
+   e = ctx_transform->state[4];
+   f = ctx_transform->state[5];
+   g = ctx_transform->state[6];
+   h = ctx_transform->state[7];
    
    for (i = 0; i < 64; ++i) {
       t1 = h + EP1(e) + CH(e,f,g) + k[i] + m[i];
@@ -66,19 +70,19 @@ void sha256_transform(SHA256_CTX *ctx, uchar data[64])
       a = t1 + t2;
    }
    
-   ctx->state[0] += a;
-   ctx->state[1] += b;
-   ctx->state[2] += c;
-   ctx->state[3] += d;
-   ctx->state[4] += e;
-   ctx->state[5] += f;
-   ctx->state[6] += g;
-   ctx->state[7] += h;
+   ctx_transform->state[0] += a;
+   ctx_transform->state[1] += b;
+   ctx_transform->state[2] += c;
+   ctx_transform->state[3] += d;
+   ctx_transform->state[4] += e;
+   ctx_transform->state[5] += f;
+   ctx_transform->state[6] += g;
+   ctx_transform->state[7] += h;
 }  
 
 void sha256_init(SHA256_CTX *ctx)
 {  
-   ctx->datalen = 0; 
+   ctx->datalen = 0;
    ctx->bitlen[0] = 0; 
    ctx->bitlen[1] = 0; 
    ctx->state[0] = 0x6a09e667;
@@ -96,73 +100,80 @@ void sha256_update(SHA256_CTX *ctx, uchar data[64], uint len)
    uint t,i;
 #pragma HLS unroll
    for (i=0; i < len; ++i) { 
-      ctx->data[ctx->datalen] = data[i]; 
-      ctx->datalen++; 
-      if (ctx->datalen == 64) { 
-         sha256_transform(ctx,ctx->data);
+      ctx->in_data[ctx->datalen] = data[i];
+      ctx->datalen++;
+      if (ctx->datalen == 64) {
+         sha256_transform(ctx,ctx->in_data);
          DBL_INT_ADD(ctx->bitlen[0],ctx->bitlen[1],512); 
-         ctx->datalen = 0; 
+         ctx->datalen = 0;
       }  
    }  
 }  
 
-void sha256_final(SHA256_CTX *ctx, uchar hash[])
+void sha256_final(SHA256_CTX *ctx_final, uchar final_hash[64])
 {  
    uint i; 
-   
-   i = ctx->datalen; 
+   uint j;
+   i = ctx_final->datalen;
    
    // Pad whatever data is left in the buffer. 
-   if (ctx->datalen < 56) { 
-      ctx->data[i++] = 0x80; 
+   if (ctx_final->datalen < 56) {
+      ctx_final->in_data[i++] = 0x80;
       while (i < 56) 
-         ctx->data[i++] = 0x00; 
+         ctx_final->in_data[i++] = 0x00;
    }  
    else { 
-      ctx->data[i++] = 0x80; 
+      ctx_final->in_data[i++] = 0x80;
       while (i < 64) 
-         ctx->data[i++] = 0x00; 
-      sha256_transform(ctx,ctx->data);
-      //memset(ctx->data,0,56);
+         ctx_final->in_data[i++] = 0x00;
+      sha256_transform(ctx_final,ctx_final->in_data);
+      //memset(ctx_final->in_data,0,56);
 
-	for(i = 0; i < 56; i = i + 1) {
-			  ctx->data[i] = 0;
+	for(j = 0; j < 56; j = j + 1) {
+			  ctx_final->in_data[j] = 0;
 		  }
 	}
    
    // Append to the padding the total message's length in bits and transform. 
-   DBL_INT_ADD(ctx->bitlen[0],ctx->bitlen[1],ctx->datalen * 8);
-   ctx->data[63] = ctx->bitlen[0]; 
-   ctx->data[62] = ctx->bitlen[0] >> 8; 
-   ctx->data[61] = ctx->bitlen[0] >> 16; 
-   ctx->data[60] = ctx->bitlen[0] >> 24; 
-   ctx->data[59] = ctx->bitlen[1]; 
-   ctx->data[58] = ctx->bitlen[1] >> 8; 
-   ctx->data[57] = ctx->bitlen[1] >> 16;  
-   ctx->data[56] = ctx->bitlen[1] >> 24; 
-   sha256_transform(ctx,ctx->data);
-   
+   DBL_INT_ADD(ctx_final->bitlen[0],ctx_final->bitlen[1],ctx_final->datalen * 8);
+   ctx_final->in_data[63] = ctx_final->bitlen[0];
+   ctx_final->in_data[62] = ctx_final->bitlen[0] >> 8;
+   ctx_final->in_data[61] = ctx_final->bitlen[0] >> 16;
+   ctx_final->in_data[60] = ctx_final->bitlen[0] >> 24;
+   ctx_final->in_data[59] = ctx_final->bitlen[1];
+   ctx_final->in_data[58] = ctx_final->bitlen[1] >> 8;
+   ctx_final->in_data[57] = ctx_final->bitlen[1] >> 16;
+   ctx_final->in_data[56] = ctx_final->bitlen[1] >> 24;
+   sha256_transform(ctx_final,ctx_final->in_data);
+
    // Since this implementation uses little endian byte ordering and SHA uses big endian,
-   // reverse all the bytes when copying the final state to the output hash. 
+   // reverse all the bytes when copying the final state to the output hash.
 #pragma HLS unroll
-   for (i=0; i < 4; ++i) { 
-      hash[i]    = (ctx->state[0] >> (24-i*8)) & 0x000000ff; 
-      hash[i+4]  = (ctx->state[1] >> (24-i*8)) & 0x000000ff; 
-      hash[i+8]  = (ctx->state[2] >> (24-i*8)) & 0x000000ff;
-      hash[i+12] = (ctx->state[3] >> (24-i*8)) & 0x000000ff;
-      hash[i+16] = (ctx->state[4] >> (24-i*8)) & 0x000000ff;
-      hash[i+20] = (ctx->state[5] >> (24-i*8)) & 0x000000ff;
-      hash[i+24] = (ctx->state[6] >> (24-i*8)) & 0x000000ff;
-      hash[i+28] = (ctx->state[7] >> (24-i*8)) & 0x000000ff;
-   }  
+   for (i=0; i < 4; ++i) {
+	  final_hash[i]    = ((ctx_final->state[0] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+4]  = ((ctx_final->state[1] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+8]  = ((ctx_final->state[2] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+12] = ((ctx_final->state[3] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+16] = ((ctx_final->state[4] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+20] = ((ctx_final->state[5] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+24] = ((ctx_final->state[6] >> (24-i*8)) & 0x000000ff);
+	  final_hash[i+28] = ((ctx_final->state[7] >> (24-i*8)) & 0x000000ff);
+   }
 }  
 
 
 // SHA256_top
-void sha256_top(SHA256_CTX *ctx, uchar data[64], uint len, uchar hash[64]) {
+void sha256_top(SHA256_CTX *ctx, uchar data[64], uchar hash[64], bool rst_array) {
+	uint len = 64;
 	int i;
-	// Initialize the hash
+
+#pragma HLS inline
 	sha256_init(ctx);
+	const SHA256_CTX *ctx_temp = ctx;
+	// Initialize the hash
+	if (rst_array == 1) {
+		ctx = ctx_temp;
+	}
 
 	// Update the hash with data
 	sha256_update(ctx, data, len);
@@ -170,3 +181,6 @@ void sha256_top(SHA256_CTX *ctx, uchar data[64], uint len, uchar hash[64]) {
 	// Finalize
 	sha256_final(ctx, hash);
 }
+
+// SHA256_controller
+//void sha256_controller()
