@@ -22,9 +22,9 @@ Basic Design
 
 The basic design is to utilize the ARM dual core processor to handle communication to a pool and act as an arbiter for the miners. Utilizing AXI4 capabilities, it will be able to communicate with the programmable logic (PL) with ease.
 
-Processor 0 - This is the main communication to the outside world. This processor will run Linux with Python/Perl scripts to handle datatransmission to/from pool and to/from arbiter
-Processor 1 - This is a bare-metal program which will communicate with Processor 0 for jobs, and the PL to distribute/read in work
-PL - Where the miners live.
+- Processor 0 - This is the main communication to the outside world. This processor will run Linux with Python/Perl scripts to handle datatransmission to/from pool and to/from arbiter
+- Processor 1 - This is a bare-metal program which will communicate with Processor 0 for jobs, and the PL to distribute/read in work
+- PL - Where the miners live.
 
 Features
 ========
