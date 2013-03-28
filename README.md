@@ -51,3 +51,7 @@ The SHA256 algorithm will be created in Vivado HLS is a High-Level Synthesis too
 
 
 Currently, all HLS related code is generated using the Vivado HLS 2012.4 30-day trial license provided by Xilinx.
+
+Wiki
+====
+FAQ - https://github.com/stiggy87/ZynqBTC/wiki/FAQ
