@@ -7,7 +7,7 @@
  *  - uint state[8] - The state of the hash (output)
  *  - uchar data_t[32] - The data to transform (input)
  */
-void sha256_transform(uint state[8], uchar data_t[32]) {
+void sha256_transform(uint state[8], uchar data_t[32]) { // TODO: Check data_t size, can be reused?
 #pragma HLS balance_expression // Try to balance as many expressions as possible
 	int i;
 	uint a, b, c, d, e, f, g, h;
@@ -92,6 +92,7 @@ void sha256_begin(uint state[8], uchar data_begin[80], uchar hash_begin[32]) {
 void sha256_end(uint state[8], uchar data_end[32], uchar hash_end[32]) {
 	// Initialize the states
 	sha256_init(state);
+	//sha256_transform(state,);
 }
 
 /*
@@ -113,23 +114,42 @@ void byte_swap(uchar hash[32], uchar flip[32]) {
  *  - uchar data[80] - 80B of the block
  *  - uchar hash[32] - Output hash
  */
-bool miner(uchar data[80], uchar hash[32]) {
+bool miner(uchar data[80], uchar hash[32] ) {
+	// mid-state not taken into account (ARM will handle this)
 	uint state[8];
-	uchar hash_begin[32];
-	bool valid_hash = false;
+	uchar hash_begin[32]; // Used for between the first and second hash
+	uint hash_check[8]; // Used to check to make sure the hash is valid
+	bool valid_hash = false; // Return value, this is for control signaling
+	uint nonce = 0; // TODO: Fix nonce init valid
+	uint max_nonce = 0xff000000; // Maximum nonce to count to (can be changed); TODO: fix max nonce
 
 	// Create a loop that will run until a valid hash is taken.
-	// Run through the first hash
-	sha256_begin(state, data, hash_begin);
+	while (1) {
+		// Run through the first hash
+		sha256_begin(state, data, hash_begin);
 
-	// TODO: Byte_swap
-	// Byte swap the output for the next hashing
+		// TODO: Byte_swap
+		// Byte swap the output for the next hashing
 
-	// Run through the second hash
-	sha256_begin(state, hash_begin, hash);
+		// Run through the second hash
+		sha256_begin(state, hash_begin, hash);
 
-	// TODO: Check hash
-	// Check the hash to see if it works, if not hash with a new nonce
+		hash_check = (uint)hash;
+
+		// TODO: Check hash
+		// Check the hash to see if it works, if not hash with a new nonce
+		if ((nonce >= max_nonce)) {
+			valid_hash = false;
+			break;
+		}
+
+		if (hash_check[7] == 0) {
+			valid_hash = true;
+			break;
+		}
+
+		nonce++;
+	}
 
 	return valid_hash;
 }
