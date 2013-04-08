@@ -15,6 +15,7 @@ TODO
 - Create the Zynq PL utilizing the SHA256 IP as well as AXI4 FIFO Stream and AXI4 Interconnect (for multiple miners)
 - Create the Arbiter in C/C++ for communication to the AXI4 Interconnect
 - Configure the ARM to run Linux on Proc 0 and Arbiter on Proc 1
+- Support the Stratum protocol (getwork will not be supported in the main branch. If getwork version is requested, a new branch will be created).
 - Benchmark!!!!
 
 Basic Design
