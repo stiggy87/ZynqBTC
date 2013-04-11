@@ -48,6 +48,14 @@ void sha256_transform(uint state[8], uchar data_t[32]);
 void sha256_init(uint state[8]);
 
 /*
+ * Function: midstate
+ * Description: Calculates the midstate of the hash
+ * Parameters:
+ *
+ */
+void midstate();
+
+/*
  * Function: sha256_begin
  * Description: Stage 1 hashing (can be synthesized by itself)
  * Parameters:
@@ -62,15 +70,6 @@ void sha256_begin(uint state[8], uchar data_begin[80], uchar hash_begin[32]);
  *
  */
 void sha256_end(uint state[8], uchar data_end[32], uchar hash_end[32]);
-
-/*
- * Function: byte_swap
- * Description: Big-Endian to Little-Endian
- * Parameters:
- *  - uchar hash[32] - Input
- *  - uchar flip[32] - Output
- */
-void byte_swap(uchar hash[32], uchar flip[32]);
 
 /*
  * Function: miner

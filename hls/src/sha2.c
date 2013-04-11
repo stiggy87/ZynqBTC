@@ -1,4 +1,6 @@
 #include "sha2.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
 /*
  * Function: sha256_transform
@@ -7,8 +9,8 @@
  *  - uint state[8] - The state of the hash (output)
  *  - uchar data_t[32] - The data to transform (input)
  */
-void sha256_transform(uint state[8], uchar data_t[32]) { // TODO: Check data_t size, can be reused?
-#pragma HLS balance_expression // Try to balance as many expressions as possible
+void sha256_transform(uint state[8], uchar data_t[64]) {
+#pragma HLS expression_balance // Try to balance as many expressions as possible
 	int i;
 	uint a, b, c, d, e, f, g, h;
 	uint t1, t2, W[64];
@@ -63,11 +65,10 @@ void sha256_transform(uint state[8], uchar data_t[32]) { // TODO: Check data_t s
  */
 void sha256_init(uint state[8]) {
 #pragma HLS inline // Remove the sha256_init hierarchy
+//	memcpy(state,H,8);
 	int i;
-#pragma HLS unroll // Try and unroll the for loop
-	// Initialize the states
 	for(i = 0; i < 8; i = i + 1) {
-		state[i] = K[i];
+		state[i] = H[i];
 	}
 }
 
@@ -77,10 +78,11 @@ void sha256_init(uint state[8]) {
  * Parameters:
  *
  */
-void sha256_begin(uint state[8], uchar data_begin[80], uchar hash_begin[32]) {
+void sha256_begin(uint state[8], uchar data_begin[64], uchar hash_begin[32]) {
 	// Initialize the states
 	sha256_init(state);
-	//sha256_transform(state, )
+	sha256_transform(state, data_begin);
+	*hash_begin = (uchar*)state;
 }
 
 /*
@@ -89,21 +91,11 @@ void sha256_begin(uint state[8], uchar data_begin[80], uchar hash_begin[32]) {
  * Parameters:
  *
  */
-void sha256_end(uint state[8], uchar data_end[32], uchar hash_end[32]) {
+void sha256_end(uint state[8], uchar data_end[64], uchar hash_end[32]) {
 	// Initialize the states
 	sha256_init(state);
-	//sha256_transform(state,);
-}
-
-/*
- * Function: byte_swap
- * Description: Big-Endian to Little-Endian
- * Parameters:
- *  - uchar hash[32] - Input
- *  - uchar flip[32] - Output
- */
-void byte_swap(uchar hash[32], uchar flip[32]) {
-
+	sha256_transform(state, data_end);
+	hash_end = (uchar)state;
 }
 
 /*
@@ -117,24 +109,29 @@ void byte_swap(uchar hash[32], uchar flip[32]) {
 bool miner(uchar data[80], uchar hash[32] ) {
 	// mid-state not taken into account (ARM will handle this)
 	uint state[8];
-	uchar hash_begin[32]; // Used for between the first and second hash
-	uint hash_check[8]; // Used to check to make sure the hash is valid
+	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-	uint nonce = 0; // TODO: Fix nonce init valid
-	uint max_nonce = 0xff000000; // Maximum nonce to count to (can be changed); TODO: fix max nonce
+	uint nonce = 0; // Initial value of nonce
+	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
+	uint target[32] = {0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000}; // If the has is <= this, it's a valid hash
+
+	// Split the data[80] into the first 64-bytes (MSB)
+	uchar first_hash[32];
+	memcpy(first_hash,data,64); // The first 64-bytes contain the data
+
+	sha256_begin(state, first_hash, mid_state); // Get the midstate, which should be 32-bytes (256-bits)
+
+	// Combine the mid_state with the remaining data (where nonce is adjusted)
 
 	// Create a loop that will run until a valid hash is taken.
 	while (1) {
 		// Run through the first hash
-		sha256_begin(state, data, hash_begin);
 
 		// TODO: Byte_swap
 		// Byte swap the output for the next hashing
 
 		// Run through the second hash
-		sha256_begin(state, hash_begin, hash);
-
-		hash_check = (uint)hash;
+		sha256_begin(state, mid_state, hash);
 
 		// TODO: Check hash
 		// Check the hash to see if it works, if not hash with a new nonce
@@ -143,7 +140,7 @@ bool miner(uchar data[80], uchar hash[32] ) {
 			break;
 		}
 
-		if (hash_check[7] == 0) {
+		if (hash <= target) {
 			valid_hash = true;
 			break;
 		}
