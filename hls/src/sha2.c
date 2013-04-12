@@ -111,13 +111,13 @@ bool miner(uchar data[80], uchar hash[32] ) {
 	uint state[8];
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-	uint nonce = 0; // Initial value of nonce
+	uint *nonce = (uint*)(data+12); // Initial value of nonce
 	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
 	uint target[32] = {0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000}; // If the has is <= this, it's a valid hash
 
 	// Split the data[80] into the first 64-bytes (MSB)
 	uchar first_hash[32];
-	memcpy(first_hash,data,64); // The first 64-bytes contain the data
+	memcpy((void *)first_hash,(void *)(data+16),64); // The first 64-bytes (80..16) contain the data
 
 	sha256_begin(state, first_hash, mid_state); // Get the midstate, which should be 32-bytes (256-bits)
 
@@ -145,7 +145,7 @@ bool miner(uchar data[80], uchar hash[32] ) {
 			break;
 		}
 
-		nonce++;
+		(*nonce)++;
 	}
 
 	return valid_hash;
