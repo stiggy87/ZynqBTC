@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
 	miner(test_val, final_hash);
 
-	printf("Final Hash = "); print_hash(final_hash);
+	printf("Final Hash = "); print_hash(final_hash, 32);
 
 	return 0;
 }

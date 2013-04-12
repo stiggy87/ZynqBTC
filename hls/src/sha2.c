@@ -107,8 +107,8 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	uint state[8];
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-//	uint nonce = 0; // Initial value of nonce
-	uint nonce = (uint *)(data+76);
+	uint *nonce = (uint*)(data+76); // Initial value of nonce
+	uint n = 0;
 	printf("Nonce = %08x\n", nonce);
 
 	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
@@ -124,37 +124,37 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	printf("First to hash = "); print_hash(first_hash,64);
 
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
-
+	sha256_update(mid_state, first_hash, H); // Get the midstate, which should be 32-bytes (256-bits)
+	printf("Mid State = "); print_hash((uchar*)mid_state,32);
 	// Create a loop that will run until a valid hash is taken.
-//	while (1) {
+	while (1) {
 		// Run through the first hash
 
 		// TODO: Byte_swap
 		// Byte swap the output for the next hashing
 
 		// Run through the second hash
-		sha256_update(mid_state, first_hash, H); // Get the midstate, which should be 32-bytes (256-bits)
-		printf("Mid State = "); print_hash((uchar*)mid_state,32);
 		sha256_update(state, (data+64), mid_state);
-		printf("Final Hash = "); print_hash((uchar*)state,32);
+		printf ("Nonce = %08x",n); printf("\tFinal Hash = "); print_hash((uchar*)state,32);
 		// Byte swap the output
 
 		// TODO: Check hash
 		// Check the hash to see if it works, if not hash with a new nonce
 		if ((nonce >= max_nonce)) {
 			valid_hash = false;
-//			break;
+			break;
 		}
 
-		if (state <= target) {
-			hash = (uchar*)state;
+		if ((uchar*)state <= target) {
+			memcpy(hash, (uchar*)state, 32);
+			printf ("Nonce = %08x",nonce);
 			valid_hash = true;
-//			break;
+			break;
 		}
 
-
-//		nonce++;
-//	}
+		n++;
+		*nonce = n;
+	}
 	valid_hash = true;
 	return valid_hash;
 }
