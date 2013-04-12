@@ -49,21 +49,13 @@ void sha256_transform(uint state[8], uchar data_t[32]);
 void sha256_init(uint state[8]);
 
 /*
- * Function: midstate
- * Description: Calculates the midstate of the hash
- * Parameters:
- *
- */
-void midstate();
-
-/*
  * Function: sha256_update
  * Description: Initialization of the data to be hashed
  * Parameters:
  *	- state[8]
  *	- data[64]
  */
-void sha256_update(uint state[8], uchar data[64]);
+void sha256_update(uint state[8], uchar data[64], uchar init[32]);
 
 /*
  * Function: miner

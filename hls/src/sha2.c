@@ -87,9 +87,9 @@ void sha256_init(uint state[8]) {
  *	- state[8]
  *	- data[64]
  */
-void sha256_update(uint state[8], uchar data[64]) {
+void sha256_update(uint state[8], uchar data[64], uchar init[32]) {
 	// Initialize the states
-	sha256_init(state);
+	memcpy(state,init,32);
 	sha256_transform(state, data);
 }
 
@@ -123,8 +123,6 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	memcpy(first_hash,data,64); // The first 64-bytes contain the data
 	printf("First to hash = "); print_hash(first_hash,64);
 
-	sha256_begin(state, first_hash, mid_state); // Get the midstate, which should be 32-bytes (256-bits)
-
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
 
 	// Create a loop that will run until a valid hash is taken.
@@ -135,9 +133,9 @@ bool miner(uchar data[128], uchar hash[32] ) {
 		// Byte swap the output for the next hashing
 
 		// Run through the second hash
-		sha256_update(mid_state, first_hash); // Get the midstate, which should be 32-bytes (256-bits)
+		sha256_update(mid_state, first_hash, H); // Get the midstate, which should be 32-bytes (256-bits)
 		printf("Mid State = "); print_hash((uchar*)mid_state,32);
-		sha256_update(state, mid_state);
+		sha256_update(state, (data+64), mid_state);
 		printf("Final Hash = "); print_hash((uchar*)state,32);
 		// Byte swap the output
 
@@ -149,13 +147,13 @@ bool miner(uchar data[128], uchar hash[32] ) {
 		}
 
 		if (state <= target) {
-			*hash = *state;
+			hash = (uchar*)state;
 			valid_hash = true;
 //			break;
 		}
 
 
-		nonce++;
+//		nonce++;
 //	}
 	valid_hash = true;
 	return valid_hash;
