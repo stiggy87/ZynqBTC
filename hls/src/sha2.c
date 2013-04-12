@@ -2,6 +2,14 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+void print_hash(unsigned char hash[], int size)
+{
+   int idx;
+   for (idx=0; idx < size; idx++)
+      printf("%02x",hash[idx]);
+   printf("\n");
+}
+
 /*
  * Function: sha256_transform
  * Description: Transform algorithm for SHA256
@@ -61,7 +69,7 @@ void sha256_transform(uint state[8], uchar data_t[64]) {
  * Function: sha256_init
  * Description: Initializes variables
  * Parameters:
- *
+ *	- state[8]
  */
 void sha256_init(uint state[8]) {
 #pragma HLS inline // Remove the sha256_init hierarchy
@@ -73,29 +81,16 @@ void sha256_init(uint state[8]) {
 }
 
 /*
- * Function: sha256_begin
- * Description: Stage 1 hashing (can be synthesized by itself)
+ * Function: sha256_update
+ * Description: Initialization of the data to be hashed
  * Parameters:
- *
+ *	- state[8]
+ *	- data[64]
  */
-void sha256_begin(uint state[8], uchar data_begin[64], uchar hash_begin[32]) {
+void sha256_update(uint state[8], uchar data[64]) {
 	// Initialize the states
 	sha256_init(state);
-	sha256_transform(state, data_begin);
-	*hash_begin = (uchar*)state;
-}
-
-/*
- * Function: sha256_end
- * Description: Stage 2 hashing (can be synthesized by itself)
- * Parameters:
- *
- */
-void sha256_end(uint state[8], uchar data_end[64], uchar hash_end[32]) {
-	// Initialize the states
-	sha256_init(state);
-	sha256_transform(state, data_end);
-	hash_end = (uchar)state;
+	sha256_transform(state, data);
 }
 
 /*
@@ -103,50 +98,61 @@ void sha256_end(uint state[8], uchar data_end[64], uchar hash_end[32]) {
  * Description: Bitcoin Miner (contains 2 SHA256 cores)
  * Parameters:
  *  - Control Signals (TODO)
- *  - uchar data[80] - 80B of the block
+ *  - uchar data[128] - Size of the work from Getwork and Stratum
  *  - uchar hash[32] - Output hash
  */
-bool miner(uchar data[80], uchar hash[32] ) {
+bool miner(uchar data[128], uchar hash[32] ) {
 	// mid-state not taken into account (ARM will handle this)
+	//print_hash(data,80);
 	uint state[8];
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-	uint nonce = 0; // Initial value of nonce
+//	uint nonce = 0; // Initial value of nonce
+	uint nonce = (uint *)(data+76);
+	printf("Nonce = %08x\n", nonce);
 	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
-	uint target[32] = {0xffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000}; // If the has is <= this, it's a valid hash
+	uint target[32] = {0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+					   0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+					   0xff,0xff,0xff,0xff,0xff,0xff}; // If the has is <= this, it's a valid hash
+	unsigned char hash1[32];
 
 	// Split the data[80] into the first 64-bytes (MSB)
 	uchar first_hash[32];
+//	print_hash(data,64);
 	memcpy(first_hash,data,64); // The first 64-bytes contain the data
-
-	sha256_begin(state, first_hash, mid_state); // Get the midstate, which should be 32-bytes (256-bits)
+	printf("First to hash = "); print_hash(first_hash,64);
 
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
 
 	// Create a loop that will run until a valid hash is taken.
-	while (1) {
+//	while (1) {
 		// Run through the first hash
 
 		// TODO: Byte_swap
 		// Byte swap the output for the next hashing
 
 		// Run through the second hash
-		sha256_begin(state, mid_state, hash);
+		sha256_update(mid_state, first_hash); // Get the midstate, which should be 32-bytes (256-bits)
+		printf("Mid State = "); print_hash((uchar*)mid_state,32);
+		sha256_update(state, mid_state);
+		printf("Final Hash = "); print_hash((uchar*)state,32);
+		// Byte swap the output
 
 		// TODO: Check hash
 		// Check the hash to see if it works, if not hash with a new nonce
 		if ((nonce >= max_nonce)) {
 			valid_hash = false;
-			break;
+//			break;
 		}
 
-		if (hash <= target) {
+		if (state <= target) {
+			*hash = *state;
 			valid_hash = true;
-			break;
+//			break;
 		}
 
 		nonce++;
-	}
-
+//	}
+	valid_hash = true;
 	return valid_hash;
 }

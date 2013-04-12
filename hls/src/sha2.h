@@ -3,9 +3,10 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-typedef  unsigned char uchar; // 8-bit byte
-typedef  unsigned long uint; // 32-bit word
+typedef uint8_t uchar; // 8-bit byte
+typedef  uint32_t uint; // 32-bit word
 
 #define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
@@ -56,29 +57,22 @@ void sha256_init(uint state[8]);
 void midstate();
 
 /*
- * Function: sha256_begin
- * Description: Stage 1 hashing (can be synthesized by itself)
+ * Function: sha256_update
+ * Description: Initialization of the data to be hashed
  * Parameters:
- *
+ *	- state[8]
+ *	- data[64]
  */
-void sha256_begin(uint state[8], uchar data_begin[80], uchar hash_begin[32]);
-
-/*
- * Function: sha256_end
- * Description: Stage 2 hashing (can be synthesized by itself)
- * Parameters:
- *
- */
-void sha256_end(uint state[8], uchar data_end[32], uchar hash_end[32]);
+void sha256_update(uint state[8], uchar data[64]);
 
 /*
  * Function: miner
  * Description: Bitcoin Miner (contains 2 SHA256 cores)
  * Parameters:
  *  - Control Signals (TODO)
- *  - uchar data[80] - 80B of the block
+ *  - uchar data[128] - Size of the work from Getwork and Stratum
  *  - uchar hash[32] - Output hash
  */
-bool miner(uchar data[80], uchar hash[32]);
+bool miner(uchar data[128], uchar hash[32]);
 
 #endif _SHA_2_H_
