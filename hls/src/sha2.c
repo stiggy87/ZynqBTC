@@ -107,17 +107,10 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	uint state[8];
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-<<<<<<< HEAD
-<<<<<<< HEAD
 //	uint nonce = 0; // Initial value of nonce
 	uint nonce = (uint *)(data+76);
 	printf("Nonce = %08x\n", nonce);
-=======
-	uint *nonce = (uint*)(data+12); // Initial value of nonce
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
-=======
-	uint *nonce = (uint*)(data+12); // Initial value of nonce
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
+
 	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
 	uint target[32] = {0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 					   0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
@@ -126,18 +119,11 @@ bool miner(uchar data[128], uchar hash[32] ) {
 
 	// Split the data[80] into the first 64-bytes (MSB)
 	uchar first_hash[32];
-<<<<<<< HEAD
-<<<<<<< HEAD
 //	print_hash(data,64);
 	memcpy(first_hash,data,64); // The first 64-bytes contain the data
 	printf("First to hash = "); print_hash(first_hash,64);
-=======
-=======
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
-	memcpy((void *)first_hash,(void *)(data+16),64); // The first 64-bytes (80..16) contain the data
 
 	sha256_begin(state, first_hash, mid_state); // Get the midstate, which should be 32-bytes (256-bits)
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
 
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
 
@@ -168,17 +154,9 @@ bool miner(uchar data[128], uchar hash[32] ) {
 //			break;
 		}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 		nonce++;
 //	}
 	valid_hash = true;
-=======
-=======
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
-		(*nonce)++;
-	}
-
->>>>>>> 64095315fdbf4cf30457870b3198babe37d9a453
 	return valid_hash;
 }
