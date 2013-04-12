@@ -108,6 +108,7 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
 	uint *nonce = (uint*)(data+76); // Initial value of nonce
+	int i;
 	uint n = 0;
 	printf("Nonce = %08x\n", nonce);
 
@@ -115,23 +116,25 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	uint target[32] = {0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 					   0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
 					   0xff,0xff,0xff,0xff,0xff,0xff}; // If the has is <= this, it's a valid hash
-	unsigned char hash1[32];
+	uchar hash1[32];
+	uchar tmp_hash[64];
 
 	// Split the data[80] into the first 64-bytes (MSB)
-	uchar first_hash[32];
+	uint first_hash[16];
 //	print_hash(data,64);
-	memcpy(first_hash,data,64); // The first 64-bytes contain the data
+	memcpy(first_hash,(uint*)data,64); // The first 64-bytes contain the data
 	printf("First to hash = "); print_hash(first_hash,64);
 
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
 	sha256_update(mid_state, first_hash, H); // Get the midstate, which should be 32-bytes (256-bits)
-	printf("Mid State = "); print_hash((uchar*)mid_state,32);
-	// Create a loop that will run until a valid hash is taken.
-	while (1) {
-		// Run through the first hash
 
-		// TODO: Byte_swap
-		// Byte swap the output for the next hashing
+	// TODO: Byte_swap
+	// Byte swap the output for the next hashing
+	printf("Mid State = "); print_hash((uchar*)mid_state,32);
+
+	// Create a loop that will run until a valid hash is taken.
+//	while (1) {
+
 
 		// Run through the second hash
 		sha256_update(state, (data+64), mid_state);
@@ -142,19 +145,20 @@ bool miner(uchar data[128], uchar hash[32] ) {
 		// Check the hash to see if it works, if not hash with a new nonce
 		if ((nonce >= max_nonce)) {
 			valid_hash = false;
-			break;
+//			break;
 		}
 
-		if ((uchar*)state <= target) {
-			memcpy(hash, (uchar*)state, 32);
+		memcpy(hash, (uchar*)state, 32);
+		if (hash <= target) {
 			printf ("Nonce = %08x",nonce);
 			valid_hash = true;
-			break;
+//			break;
 		}
 
 		n++;
 		*nonce = n;
-	}
+//	}
+
 	valid_hash = true;
 	return valid_hash;
 }

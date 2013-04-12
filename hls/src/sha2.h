@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "byteorder.h"
 
 typedef uint8_t uchar; // 8-bit byte
 typedef  uint32_t uint; // 32-bit word
