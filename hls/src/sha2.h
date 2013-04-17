@@ -66,6 +66,6 @@ void sha256_update(uint state[8], uchar data[64], uchar init[32]);
  *  - uchar data[128] - Size of the work from Getwork and Stratum
  *  - uchar hash[32] - Output hash
  */
-bool miner(uchar data[128], uchar hash[32]);
+bool miner(uchar data[128], uchar hash[32], uint *nonce);
 
 #endif _SHA_2_H_

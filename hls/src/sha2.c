@@ -101,16 +101,16 @@ void sha256_update(uint state[8], uchar data[64], uchar init[32]) {
  *  - uchar data[128] - Size of the work from Getwork and Stratum
  *  - uchar hash[32] - Output hash
  */
-bool miner(uchar data[128], uchar hash[32] ) {
+bool miner(uchar data[128], uchar hash[32] , uint *nonce) {
 	// mid-state not taken into account (ARM will handle this)
 	//print_hash(data,80);
 	uint state[8];
 	uchar mid_state[32]; // Used for between the first and second hash
 	bool valid_hash = false; // Return value, this is for control signaling
-	uint *nonce = (uint*)(data+76); // Initial value of nonce
+	//uint *nonce = (uint*)(data+76); // Initial value of nonce
 	int i;
 	uint n = 0;
-	printf("Nonce = %08x\n", nonce);
+	//printf("Nonce = %08x\n", nonce);
 
 	uint max_nonce = 0xffffffff; // Maximum nonce to count to (can be changed)
 	uint target[32] = {0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
@@ -123,41 +123,41 @@ bool miner(uchar data[128], uchar hash[32] ) {
 	uint first_hash[16];
 //	print_hash(data,64);
 	memcpy(first_hash,(uint*)data,64); // The first 64-bytes contain the data
-	printf("First to hash = "); print_hash(first_hash,64);
+	//printf("First to hash = "); print_hash(first_hash,64);
 
 	// Combine the mid_state with the remaining data (where nonce is adjusted)
 	sha256_update(mid_state, first_hash, H); // Get the midstate, which should be 32-bytes (256-bits)
 
 	// TODO: Byte_swap
 	// Byte swap the output for the next hashing
-	printf("Mid State = "); print_hash((uchar*)mid_state,32);
+	//printf("Mid State = "); print_hash((uchar*)mid_state,32);
 
 	// Create a loop that will run until a valid hash is taken.
-//	while (1) {
+	//while (1) {
 
 
 		// Run through the second hash
 		sha256_update(state, (data+64), mid_state);
-		printf ("Nonce = %08x",n); printf("\tFinal Hash = "); print_hash((uchar*)state,32);
+		//printf ("Nonce = %08x",n); printf("\tFinal Hash = "); print_hash((uchar*)state,32);
 		// Byte swap the output
 
 		// TODO: Check hash
 		// Check the hash to see if it works, if not hash with a new nonce
 		if ((nonce >= max_nonce)) {
 			valid_hash = false;
-//			break;
+		//	break;
 		}
 
 		memcpy(hash, (uchar*)state, 32);
 		if (hash <= target) {
-			printf ("Nonce = %08x",nonce);
+			//printf ("Nonce = %08x",nonce);
 			valid_hash = true;
-//			break;
+		//	break;
 		}
 
-		n++;
-		*nonce = n;
-//	}
+//		n++;
+//		*nonce = n;
+	//}
 
 	valid_hash = true;
 	return valid_hash;
