@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[]) {
 	//uchar test_data[128];
-	uchar valid_hash[32];
+	uchar valid_hash[32] = {0x00};
 	int i,j;
 	unsigned err_cnt = 0;
 
@@ -31,20 +31,20 @@ int main(int argc, char *argv[]) {
 	i = 0;
 	while (!feof(fp)) {
 		fscanf(fp, "%s %s %s", get_work_data[i], golden_hash[i], nonce[i]);
-		//printf("Work %d= %s\n", i,get_work_data[i]);
-		//printf("Hash %d= %s\n", i,golden_hash[i]);
-		//printf("Nonce %d= %s\n",i, nonce[i]);
+		printf("Work %d = %s\n", i,get_work_data[i]);
+		printf("Hash %d = %s\n", i,golden_hash[i]);
+		printf("Nonce %d = %s\n",i, nonce[i]);
 		i++;
 	}
 	fclose(fp);
 
 	// Run through the miner
 	for(i = 0; i < NUM_TESTS; i += 1) {
-		miner(get_work_data[i], valid_hash, nonce);
+		miner(get_work_data[i], valid_hash, nonce[i]);
 
 		// Compare the valid_hash to the once brought in
-		print_hash(valid_hash, sizeof(valid_hash));
-		printf("%s", golden_hash[i]);
+		printf("Valid hash %d = %s\n", i, golden_hash[i]);
+		printf("Test %d = ",i); print_hash(valid_hash, sizeof(valid_hash));
 	}
 
 	return err_cnt;
