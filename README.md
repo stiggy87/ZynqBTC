@@ -3,6 +3,11 @@ ZynqBTC
 
 A Bitcoin miner for the Zynq chip utilizing the Zedboard.
 
+8/9/2023
+***THIS IS ARCHIVED!*** I haven't updated this in years, and due to real-life things getting in the way, I am archiving this (after so many years of no updates). I'm glad some people still star it and fork it for their own purposes.
+
+I do want to mention that the Vitis flow will make this easier.
+
 Goal
 ====
 
